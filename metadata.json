@@ -1,0 +1,5 @@
+{
+  "name": "Audio Merge Studio",
+  "description": "An application to upload, arrange, and merge multiple audio clips. Users can add pauses, adjust playback speed, and duplicate tracks to create a final combined audio file.",
+  "requestFramePermissions": []
+}
