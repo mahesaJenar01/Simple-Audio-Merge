@@ -1,15 +1,17 @@
-
 import React from 'react';
 import { PauseItem } from '../types';
-import { TrashIcon, PauseCircleIcon } from './Icons';
+import { TrashIcon, PauseCircleIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpIcon, ChevronsDownIcon } from './Icons';
 
 interface PauseTrackProps {
   item: PauseItem;
+  index: number;
+  totalItems: number;
   onDelete: () => void;
   onDurationChange: (duration: number) => void;
+  onMoveItem: (steps: number) => void;
 }
 
-export const PauseTrack: React.FC<PauseTrackProps> = ({ item, onDelete, onDurationChange }) => {
+export const PauseTrack: React.FC<PauseTrackProps> = ({ item, index, totalItems, onDelete, onDurationChange, onMoveItem }) => {
   const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     if (!isNaN(value) && value >= 0) {
@@ -38,6 +40,18 @@ export const PauseTrack: React.FC<PauseTrackProps> = ({ item, onDelete, onDurati
         </div>
       </div>
       <div className="flex items-center gap-2 ml-4">
+        <button onClick={() => onMoveItem(-2)} disabled={index < 2} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move up 2 steps">
+          <ChevronsUpIcon />
+        </button>
+        <button onClick={() => onMoveItem(-1)} disabled={index < 1} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move up">
+          <ArrowUpIcon />
+        </button>
+        <button onClick={() => onMoveItem(1)} disabled={index >= totalItems - 1} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move down">
+          <ArrowDownIcon />
+        </button>
+        <button onClick={() => onMoveItem(2)} disabled={index >= totalItems - 2} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move down 2 steps">
+          <ChevronsDownIcon />
+        </button>
         <button onClick={onDelete} className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-600 rounded-full transition-colors" title="Delete">
           <TrashIcon />
         </button>

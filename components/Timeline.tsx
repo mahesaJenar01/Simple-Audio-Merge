@@ -12,11 +12,9 @@ interface TimelineProps {
   onDuplicateItem: (id: string) => void;
   onUpdatePause: (id: string, duration: number) => void;
   onInsertPause: (index: number, position: 'above' | 'below') => void;
-  dragItemRef: React.MutableRefObject<number | null>;
-  dragOverItemRef: React.MutableRefObject<number | null>;
-  onDragSort: () => void;
   onSetTrackRef: (id: string, instance: TrackInstance | null) => void;
   onTrackPlay: (id: string) => void;
+  onMoveItem: (id: string, steps: number) => void;
 }
 
 export const Timeline: React.FC<TimelineProps> = ({
@@ -25,11 +23,9 @@ export const Timeline: React.FC<TimelineProps> = ({
   onDuplicateItem,
   onUpdatePause,
   onInsertPause,
-  dragItemRef,
-  dragOverItemRef,
-  onDragSort,
   onSetTrackRef,
   onTrackPlay,
+  onMoveItem,
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -41,35 +37,37 @@ export const Timeline: React.FC<TimelineProps> = ({
           <p className="text-sm">Upload audio or add pauses to get started.</p>
         </div>
       ) : (
-        <div className="flex-grow overflow-y-auto pr-2 -mr-2 space-y-3">
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => (dragItemRef.current = index)}
-              onDragEnter={() => (dragOverItemRef.current = index)}
-              onDragEnd={onDragSort}
-              onDragOver={(e) => e.preventDefault()}
-              className="cursor-grab active:cursor-grabbing"
-            >
-              {item.type === 'audio' ? (
-                <AudioTrack
-                  ref={(el) => onSetTrackRef(item.id, el)}
-                  item={item}
-                  onDelete={() => onDeleteItem(item.id)}
-                  onDuplicate={() => onDuplicateItem(item.id)}
-                  onInsertPause={(position) => onInsertPause(index, position)}
-                  onPlay={() => onTrackPlay(item.id)}
-                />
-              ) : (
-                <PauseTrack
-                  item={item}
-                  onDelete={() => onDeleteItem(item.id)}
-                  onDurationChange={(duration) => onUpdatePause(item.id, duration)}
-                />
-              )}
-            </div>
-          ))}
+        <div 
+          className="flex-grow overflow-y-auto pr-2 -mr-2"
+        >
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <div key={item.id}>
+                {item.type === 'audio' ? (
+                  <AudioTrack
+                    ref={(el) => onSetTrackRef(item.id, el)}
+                    item={item}
+                    index={index}
+                    totalItems={items.length}
+                    onDelete={() => onDeleteItem(item.id)}
+                    onDuplicate={() => onDuplicateItem(item.id)}
+                    onInsertPause={(position) => onInsertPause(index, position)}
+                    onPlay={() => onTrackPlay(item.id)}
+                    onMoveItem={(steps) => onMoveItem(item.id, steps)}
+                  />
+                ) : (
+                  <PauseTrack
+                    item={item}
+                    index={index}
+                    totalItems={items.length}
+                    onDelete={() => onDeleteItem(item.id)}
+                    onDurationChange={(duration) => onUpdatePause(item.id, duration)}
+                    onMoveItem={(steps) => onMoveItem(item.id, steps)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

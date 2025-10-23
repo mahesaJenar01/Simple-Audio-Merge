@@ -13,6 +13,7 @@ export const useAudioProcessor = () => {
   const animationFrameIdRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef(0);
   const startOffsetRef = useRef(0);
+  const durationRef = useRef(0);
 
   useEffect(() => {
     const initializeAudioContext = () => {
@@ -30,48 +31,6 @@ export const useAudioProcessor = () => {
       audioContextRef.current?.close();
     };
   }, []);
-
-  const play = useCallback((buffer: AudioBuffer, offset: number) => {
-    if (!audioContextRef.current) return;
-    if (sourceNodeRef.current) {
-      sourceNodeRef.current.stop();
-    }
-
-    const source = audioContextRef.current.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContextRef.current.destination);
-    source.start(0, offset);
-    sourceNodeRef.current = source;
-    
-    playbackStartTimeRef.current = audioContextRef.current.currentTime;
-    startOffsetRef.current = offset;
-    setIsPlaying(true);
-    setDuration(buffer.duration);
-
-    source.onended = () => {
-      if (sourceNodeRef.current === source) {
-        setIsPlaying(false);
-        if (animationFrameIdRef.current) {
-          cancelAnimationFrame(animationFrameIdRef.current);
-        }
-        // Check if playback finished naturally
-        if (currentTime >= duration - 0.1) {
-            setCurrentTime(0);
-        }
-      }
-    };
-
-    const tick = () => {
-        if (!audioContextRef.current || audioContextRef.current.state !== 'running') {
-            return;
-        }
-        const elapsed = audioContextRef.current.currentTime - playbackStartTimeRef.current;
-        const newTime = startOffsetRef.current + elapsed;
-        setCurrentTime(newTime < duration ? newTime : duration);
-        animationFrameIdRef.current = requestAnimationFrame(tick);
-    };
-    tick();
-  }, [duration, currentTime]);
 
   const stop = useCallback(() => {
     if (animationFrameIdRef.current) {
@@ -91,11 +50,57 @@ export const useAudioProcessor = () => {
     setIsPlaying(false);
   }, []);
 
+  const play = useCallback((buffer: AudioBuffer, offset: number) => {
+    if (!audioContextRef.current) return;
+    stop(); // Ensure everything is stopped before playing.
+
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+
+    const source = audioContextRef.current.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContextRef.current.destination);
+    source.start(0, offset);
+    sourceNodeRef.current = source;
+    
+    playbackStartTimeRef.current = audioContextRef.current.currentTime;
+    startOffsetRef.current = offset;
+    setIsPlaying(true);
+    setDuration(buffer.duration);
+    durationRef.current = buffer.duration;
+
+    source.onended = () => {
+      if (sourceNodeRef.current === source) {
+        setIsPlaying(false);
+        if (animationFrameIdRef.current) {
+          cancelAnimationFrame(animationFrameIdRef.current);
+          animationFrameIdRef.current = null;
+        }
+        // Playback finished naturally, so reset time to 0.
+        setCurrentTime(0);
+      }
+    };
+
+    const tick = () => {
+        if (!audioContextRef.current || audioContextRef.current.state !== 'running') {
+            return;
+        }
+        const elapsed = audioContextRef.current.currentTime - playbackStartTimeRef.current;
+        const newTime = startOffsetRef.current + elapsed;
+        const currentDuration = durationRef.current;
+        setCurrentTime(newTime < currentDuration ? newTime : currentDuration);
+        animationFrameIdRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  }, [stop]);
+
   const reset = useCallback(() => {
     stop();
     setMergedAudioBuffer(null);
     setCurrentTime(0);
     setDuration(0);
+    durationRef.current = 0;
   }, [stop]);
 
   const seek = useCallback((time: number) => {
@@ -186,7 +191,6 @@ export const useAudioProcessor = () => {
 
       const mergedBuffer = await offlineContext.startRendering();
       setMergedAudioBuffer(mergedBuffer);
-      setDuration(mergedBuffer.duration);
       play(mergedBuffer, 0);
 
     } catch (error) {

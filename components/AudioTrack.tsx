@@ -1,19 +1,22 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { AudioItem } from '../types';
 import { formatTime } from '../utils/audioUtils';
-import { CopyIcon, TrashIcon, PlayIcon, StopIcon } from './Icons';
+import { CopyIcon, TrashIcon, PlayIcon, StopIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpIcon, ChevronsDownIcon } from './Icons';
 import { Progress } from './Progress';
 
 interface AudioTrackProps {
   item: AudioItem;
+  index: number;
+  totalItems: number;
   onDelete: () => void;
   onDuplicate: () => void;
   onInsertPause: (position: 'above' | 'below') => void;
   onPlay: () => void;
+  onMoveItem: (steps: number) => void;
 }
 
 export const AudioTrack = forwardRef<{ stop: () => void }, AudioTrackProps>(
-  ({ item, onDelete, onDuplicate, onInsertPause, onPlay }, ref) => {
+  ({ item, index, totalItems, onDelete, onDuplicate, onInsertPause, onPlay, onMoveItem }, ref) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -179,6 +182,18 @@ export const AudioTrack = forwardRef<{ stop: () => void }, AudioTrackProps>(
               </div>
           </div>
           <div className="flex items-center gap-2 ml-4">
+              <button onClick={() => onMoveItem(-2)} disabled={index < 2} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move up 2 steps">
+                <ChevronsUpIcon />
+              </button>
+              <button onClick={() => onMoveItem(-1)} disabled={index < 1} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move up">
+                <ArrowUpIcon />
+              </button>
+              <button onClick={() => onMoveItem(1)} disabled={index >= totalItems - 1} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move down">
+                <ArrowDownIcon />
+              </button>
+              <button onClick={() => onMoveItem(2)} disabled={index >= totalItems - 2} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Move down 2 steps">
+                <ChevronsDownIcon />
+              </button>
               <button onClick={onDuplicate} className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-full transition-colors" title="Duplicate">
               <CopyIcon />
               </button>

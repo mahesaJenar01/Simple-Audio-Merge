@@ -22,8 +22,6 @@ const App: React.FC = () => {
     reset: resetMergedAudio,
   } = useAudioProcessor();
 
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
   const trackRefs = useRef<Map<string, TrackInstance>>(new Map());
 
   useEffect(() => {
@@ -110,16 +108,22 @@ const App: React.FC = () => {
     );
   }, []);
 
-  const handleDragSort = useCallback(() => {
-    if (dragItem.current === null || dragOverItem.current === null) return;
-    if (dragItem.current === dragOverItem.current) return;
+  const moveItem = useCallback((id: string, steps: number) => {
+    const itemIndex = timelineItems.findIndex(item => item.id === id);
+    if (itemIndex === -1 || steps === 0) return;
+
+    const newIndex = itemIndex + steps;
+
+    // Clamp newIndex to be within bounds
+    const clampedIndex = Math.max(0, Math.min(newIndex, timelineItems.length - 1));
+
+    if (clampedIndex === itemIndex) return;
+
+    const newItems = [...timelineItems];
+    const [itemToMove] = newItems.splice(itemIndex, 1);
+    newItems.splice(clampedIndex, 0, itemToMove);
     
-    const itemsCopy = [...timelineItems];
-    const draggedItemContent = itemsCopy.splice(dragItem.current, 1)[0];
-    itemsCopy.splice(dragOverItem.current, 0, draggedItemContent);
-    dragItem.current = null;
-    dragOverItem.current = null;
-    setTimelineItems(itemsCopy);
+    setTimelineItems(newItems);
   }, [timelineItems]);
   
   const handleMergeAndPlay = () => {
@@ -155,11 +159,9 @@ const App: React.FC = () => {
             onDuplicateItem={duplicateItem}
             onUpdatePause={updatePauseDuration}
             onInsertPause={insertPause}
-            dragItemRef={dragItem}
-            dragOverItemRef={dragOverItem}
-            onDragSort={handleDragSort}
             onSetTrackRef={setTrackRef}
             onTrackPlay={handleTrackPlay}
+            onMoveItem={moveItem}
           />
         </section>
       </main>
